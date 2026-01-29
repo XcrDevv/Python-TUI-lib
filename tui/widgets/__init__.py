@@ -1,3 +1,3 @@
-from . import list, progress, select, spinner, text_input
+from . import progress, select, spinner, text_input
 
-__all__ = ['list', 'progress', 'select', 'spinner', 'text_input']
+__all__ = ['progress', 'select', 'spinner', 'text_input']
