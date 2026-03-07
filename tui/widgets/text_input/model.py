@@ -4,6 +4,7 @@ from tui.commands import Cmd
 from tui.utils import printable
 from tui.app import gen_id
 from typing import List, Literal
+import pyperclip
 
 class TextInputModel:
     def __init__(self):
@@ -109,6 +110,13 @@ class TextInputModel:
                 self.cursor.set_displacement(0)
             case 'ctrl+shift+end':
                 self.cursor.set_displacement(len(self.value))
+            case 'ctrl+v':
+                text = pyperclip.paste()
+                if text != '':
+                    start = min(self.cursor.pos)
+                    end = max(self.cursor.pos)
+                    self.value = self.value[:start] + text + self.value[end:]
+                    self.cursor.offset(len(text))
             case 'tab':
                 if self._current_suggestion:
                     self.value = self._current_suggestion
