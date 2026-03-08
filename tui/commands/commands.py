@@ -5,32 +5,33 @@ from functools import wraps
 import inspect
 import asyncio
 import time
+from functools import wraps
+from typing import Callable, Awaitable, TypeVar, ParamSpec, Union
 
 Cmd = Callable[[], Msg]
 Model = Any
 
-def command(func: Callable[..., Msg]) -> Callable[..., Callable[[], Msg]]:
-    sig = inspect.signature(func)
-    params = list(sig.parameters.values())
-    
-    is_method = len(params) > 0 and params[0].name in ('self')
-    
-    if is_method:
-        # Wrapper for methods
-        @wraps(func)
-        def method_wrapper(self: Any, *args: Any, **kwargs: Any) -> Callable[[], Msg]:
-            def command_thunk() -> Msg:
-                return func(self, *args, **kwargs)
-            return command_thunk
-        return method_wrapper
-    else:
-        # Wrapper for normal functions
-        @wraps(func)
-        def function_wrapper(*args: Any, **kwargs: Any) -> Callable[..., Msg]:
-            def command_thunk() -> Msg:
-                return func(*args, **kwargs)
-            return command_thunk
-        return function_wrapper
+P = ParamSpec("P")
+R = TypeVar("R", bound="Msg")
+
+Thunk = Callable[[], Union[R, Awaitable[R]]]
+
+def command(func: Callable[P, R] | Callable[P, Awaitable[R]]) -> Callable[P, Thunk[R]]:
+    is_async = inspect.iscoroutinefunction(func)
+
+    @wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Thunk[R]:
+
+        async def async_thunk() -> R:
+            return await func(*args, **kwargs)  # type: ignore
+
+        def sync_thunk() -> R:
+            return func(*args, **kwargs)  # type: ignore
+
+        thunk: Thunk[R] = async_thunk if is_async else sync_thunk
+        return thunk
+
+    return wrapper
 
 class Cmds:
     def __init__(self):
@@ -56,7 +57,7 @@ def quit() -> Msg:
 def tick(duration: int | float, fn: Callable[..., Any]) -> Cmd:
     async def _tick():
         await asyncio.sleep(duration)
-        if asyncio.iscoroutinefunction(fn):
+        if inspect.iscoroutinefunction(fn):
             return await fn()
         else: 
             return await asyncio.to_thread(fn)
@@ -75,7 +76,7 @@ def every(duration: int | float, fn: Callable[..., Any]) -> Cmd:
         await asyncio.sleep(delay)
         ts = datetime.fromtimestamp(next_tick)
 
-        if asyncio.iscoroutinefunction(fn):
+        if inspect.iscoroutinefunction(fn):
             return await fn(ts)
         else:
             return await asyncio.to_thread(fn)
@@ -90,7 +91,7 @@ def batch(*cmds: Cmd) -> Cmd:
             return None
 
         if len(valid_cmds) == 1:
-            return await valid_cmds[0]() if asyncio.iscoroutinefunction(valid_cmds[0]) \
+            return await valid_cmds[0]() if inspect.iscoroutinefunction(valid_cmds[0]) \
                 else await asyncio.to_thread(valid_cmds[0])
 
         return ExecBatchMsg(cmds=valid_cmds)
@@ -105,7 +106,7 @@ def sequence(*cmds: Cmd) -> Cmd:
             return None
 
         if len(valid_cmds) == 1:
-            return await valid_cmds[0]() if asyncio.iscoroutinefunction(valid_cmds[0]) \
+            return await valid_cmds[0]() if inspect.iscoroutinefunction(valid_cmds[0]) \
                 else await asyncio.to_thread(valid_cmds[0])
 
         return ExecSequenceMsg(cmds=valid_cmds)
