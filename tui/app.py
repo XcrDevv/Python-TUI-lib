@@ -11,6 +11,7 @@ from prompt_toolkit.input import create_input
 import sys
 import os
 import asyncio
+import inspect
 import threading
 
 Model = Any
@@ -133,7 +134,7 @@ class App(ABC):
     async def _execute_cmd(self, cmd: Cmd):
         async def run_cmd():
             try:
-                if asyncio.iscoroutinefunction(cmd):
+                if inspect.iscoroutinefunction(cmd):
                     msg = await cmd()
                 else:
                     loop = asyncio.get_event_loop()
