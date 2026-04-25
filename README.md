@@ -120,7 +120,7 @@ Its purpose is to perform work (I/O, calculations, timers, etc.) and return a me
 
 When a command requires parameters, it should not be executed directly in update. Instead, a function that encapsulates those parameters is returned.
 
-Para facilitar esto, la librería provee un decorador simple:
+To make this easier, the library provides a simple decorator:
 
 ```py
 @command
