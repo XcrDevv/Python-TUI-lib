@@ -11,8 +11,8 @@ class Container(ElementBuilder):
         self._y = 0
         self._width = 0
         self._height = 0
-        self._padding_x = 0
-        self._padding_y = 0
+        self._padding_x = 1
+        self._padding_y = 1
         self._border = 0
         self._rounded = False
         self._elements: List[ElementBuilder] = []
@@ -23,14 +23,6 @@ class Container(ElementBuilder):
     
     def horizontal(self):
         self._type = 'horizontal'
-        return self
-    
-    def width(self, width: int | None):
-        self._width = width
-        return self
-    
-    def height(self, height: int | None):
-        self._height = height
         return self
     
     def size(self, width: int | None, height: int | None):
@@ -58,7 +50,8 @@ class Container(ElementBuilder):
         
     def build(self):
         width = os.get_terminal_size().columns if self._width is None else self._width
-        rect = Rect(self._x, self._y, width, 0)
+        height = os.get_terminal_size().lines if self._height is None else self._height
+        rect = Rect(self._x, self._y, width, height)
         
         params = (
             rect,
@@ -77,7 +70,10 @@ class Container(ElementBuilder):
                     e._width = (os.get_terminal_size().columns)
                 
                 if e._y == 0:
-                    e._y = self._y + filled_space
+                    e._y = self._y + filled_space + self._padding_y
+                    
+                if e._x == 0:
+                    e._x = self._x + self._padding_x
                         
                 new_element = e.build()
                 filled_space += new_element.height
@@ -93,9 +89,9 @@ class Container(ElementBuilder):
                     e._height = os.get_terminal_size().lines
 
                 if e._x == 0:
-                    e._x = filled_space
+                    e._x = self._x + filled_space + self._padding_x
                     
-                e._y = self._y
+                e._y = self._y + self._padding_y
 
                 new_element = e.build()
                 filled_space += new_element.width

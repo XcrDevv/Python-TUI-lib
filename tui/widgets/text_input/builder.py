@@ -23,16 +23,11 @@ class TextInput(ElementBuilder):
         self._placeholder = placeholder
         return self
     
-    def width(self, width: int):
-        self._width = width
-        return self
-    
-    def height(self, height: int):
-        self._height = height
-        return self
-    
     def build(self):
-        rect = Rect(self._x, self._y, 1, 1)
+        width = 1 if self._width is None else self._width
+        height = 1 if self._height is None else self._height
+        
+        rect = Rect(self._x, self._y, width, height)
         
         return TextInputElement(
             rect,
