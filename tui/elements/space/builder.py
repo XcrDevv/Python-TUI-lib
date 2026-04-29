@@ -3,10 +3,10 @@ from tui.element import Rect
 from .element import SpaceElement
 
 class Space(ElementBuilder):
-    def __init__(self, width: int = 1, height: int = 1):
+    def __init__(self, vertical: int = 1, horizontal: int = 1):
         super().__init__()
-        self._height = width
-        self._width = height
+        self._width = horizontal
+        self._height = vertical
     
     def build(self):
         rect = Rect(0, 0, self._width, self._height)
